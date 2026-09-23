@@ -67,14 +67,15 @@ da raiz do projeto.
 
 # Estrutura do projeto
 
-    src/
-     └── br/
-         └── ufc/
-             └── quixada/
-                 └── sd/
-                     ├── biblioteca/
-                     ├── multicast/
-                     └── votacao/
+    td_01/
+        └──src/
+            └── br/
+                └── ufc/
+                    └── quixada/
+                        └── sd/
+                            ├── biblioteca/
+                            ├── multicast/
+                            └── votacao/
 
     build/
     README.md
