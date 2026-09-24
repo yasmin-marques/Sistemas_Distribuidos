@@ -14,13 +14,13 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Enumeration;
 
 // Exercício 4 - cliente multicast.
-
 public class ClienteMulticastBiblioteca {
 
-    private static final DateTimeFormatter FORMATO_HORA =
-            DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault());
+    private static final DateTimeFormatter FORMATO_HORA
+            = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault());
 
     public static void main(String[] args) throws Exception {
         String host = args.length > 0 ? args[0] : "localhost";
@@ -32,9 +32,7 @@ public class ClienteMulticastBiblioteca {
         // 1. Autenticação via TCP (unicast)
         String grupo;
         int portaMulticast;
-        try (Socket socket = new Socket(host, ServidorMulticastBiblioteca.PORTA_AUTENTICACAO);
-             PrintWriter saida = new PrintWriter(socket.getOutputStream(), true);
-             BufferedReader entrada = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+        try (Socket socket = new Socket(host, ServidorMulticastBiblioteca.PORTA_AUTENTICACAO); PrintWriter saida = new PrintWriter(socket.getOutputStream(), true); BufferedReader entrada = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
             saida.println(usuario);
             String resposta = entrada.readLine();
             if (resposta == null || !resposta.startsWith("OK")) {
@@ -92,13 +90,44 @@ public class ClienteMulticastBiblioteca {
     }
 
     private static NetworkInterface escolherInterfaceMulticast() throws IOException {
-        java.util.Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+
+        Enumeration<NetworkInterface> interfaces
+                = NetworkInterface.getNetworkInterfaces();
+
         while (interfaces.hasMoreElements()) {
+
             NetworkInterface interfaceAtual = interfaces.nextElement();
-            if (interfaceAtual.supportsMulticast() && interfaceAtual.isUp() && !interfaceAtual.isLoopback()) {
-                return interfaceAtual;
+
+            if (!interfaceAtual.isUp()
+                    || interfaceAtual.isLoopback()
+                    || !interfaceAtual.supportsMulticast()) {
+                continue;
+            }
+
+            Enumeration<InetAddress> enderecos
+                    = interfaceAtual.getInetAddresses();
+
+            while (enderecos.hasMoreElements()) {
+
+                InetAddress endereco = enderecos.nextElement();
+
+                // Prioriza interfaces IPv4 reais
+                if (endereco instanceof java.net.Inet4Address) {
+
+                    System.out.println(
+                            "Interface escolhida: "
+                            + interfaceAtual.getName()
+                            + " - "
+                            + endereco.getHostAddress()
+                    );
+
+                    return interfaceAtual;
+                }
             }
         }
-        return NetworkInterface.getByInetAddress(InetAddress.getLoopbackAddress());
+
+        throw new IOException(
+                "Nenhuma interface IPv4 compatível com multicast encontrada."
+        );
     }
 }
