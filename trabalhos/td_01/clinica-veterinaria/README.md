@@ -48,7 +48,7 @@ javac -version
 
 ## Compilação
 
-Na raiz do projeto:
+Na pasta clinica-veterinaria:
 
 ``` bash
 ./compilar.sh          # Linux/macOS
