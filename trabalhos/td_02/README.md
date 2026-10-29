@@ -6,7 +6,7 @@
 **Professor:** Antonio Rafael Braga\
 **Dupla 26:** Milena Helen e Yasmin Marques
 
-O relatório técnico está em [RELATORIO.md](RELATORIO.md).
+O relatório técnico está em doc/relatorio.txt
 
 ---
 
