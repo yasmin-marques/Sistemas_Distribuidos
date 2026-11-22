@@ -1,0 +1,11 @@
+{
+  "name": "cliente-estoque-javascript",
+  "version": "1.0.0",
+  "description": "Cliente web (JavaScript) do estoque da clínica veterinária - TD03",
+  "private": true,
+  "scripts": {
+    "start": "node servir.js",
+    "test": "node --test teste/api.test.js"
+  },
+  "engines": { "node": ">=18" }
+}

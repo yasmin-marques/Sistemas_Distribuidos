@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Estoque Vet · Cliente web (TD03)</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
+  <link rel="stylesheet" href="css/estilo.css">
+</head>
+<body>
+
+<!-- login -->
+<main id="tela-login" class="login">
+  <form id="form-login" class="cartao login__cartao" autocomplete="off">
+    <div class="marca marca--grande"><img class="marca__icone" src="./img/vet.png" alt="" aria-hidden="true">
+      <div><h1>Estoque Vet</h1><p class="suave">Clínica veterinária · cliente web (JavaScript)</p></div></div>
+
+    <label>Servidor da API
+      <input id="login-url" type="url" required value="http://localhost:8080" placeholder="http://localhost:8080">
+    </label>
+    <label>Usuário
+      <input id="login-usuario" required value="estoquista" list="usuarios-demo" autocapitalize="none">
+      <datalist id="usuarios-demo"><option value="veterinario"><option value="recepcao"><option value="estoquista"></datalist>
+    </label>
+    <label>Senha
+      <input id="login-senha" type="password" required value="est123">
+    </label>
+    <p id="login-erro" class="erro" role="alert" hidden></p>
+    <button class="botao botao--primario" type="submit" id="login-botao">Entrar</button>
+    <p class="suave pequeno">Usuários de demonstração: <button type="button" class="chip" data-u="veterinario" data-s="vet123">veterinario</button>
+      <button type="button" class="chip" data-u="recepcao" data-s="rec123">recepcao</button>
+      <button type="button" class="chip" data-u="estoquista" data-s="est123">estoquista</button></p>
+  </form>
+</main>
+
+<!-- aplicação -->
+<div id="app" hidden>
+  <header class="topo">
+    <div class="marca"><img class="marca__icone" src="./img/vet.png" alt="" aria-hidden="true"><strong>Estoque Vet</strong></div>
+    <nav class="abas" role="tablist" aria-label="Seções">
+      <button role="tab" data-aba="estoque" aria-selected="true">Estoque</button>
+      <button role="tab" data-aba="movs" aria-selected="false">Movimentações</button>
+      <button role="tab" data-aba="pedidos" aria-selected="false">Pedidos</button>
+      <button role="tab" data-aba="notif" aria-selected="false">Notificações <span id="contador-notif" class="selo selo--aviso" hidden>0</span></button>
+      <button role="tab" data-aba="demo" aria-selected="false">Valor × referência</button>
+      <button role="tab" data-aba="protocolo" aria-selected="false">Protocolo</button>
+    </nav>
+    <div class="topo__usuario">
+      <span id="pilula-grupo" class="pilula" title="Estado da assinatura no grupo de notificações">fora do grupo</span>
+      <span id="nome-usuario" class="suave"></span>
+      <button id="botao-sair" class="botao botao--leve">Sair</button>
+    </div>
+  </header>
+
+  <main class="conteudo">
+    <!-- estoque -->
+    <section id="aba-estoque" role="tabpanel">
+      <div class="barra">
+        <h2>Estoque</h2>
+        <input id="busca" type="search" placeholder="Buscar por nome, categoria ou fornecedor…" aria-label="Buscar itens">
+        <button id="botao-novo" class="botao botao--primario">+ Novo item</button>
+      </div>
+      <div class="cartao tabela-rolavel">
+        <table id="tabela-itens">
+          <thead><tr><th>#</th><th>Item</th><th>Fornecedor</th><th class="num">Qtd.</th><th class="num">Mín.</th>
+            <th class="num">Preço</th><th>Validade</th><th class="acoes">Ações</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p id="total-estoque" class="suave pequeno"></p>
+    </section>
+
+    <!-- movimentações -->
+    <section id="aba-movs" role="tabpanel" hidden>
+      <div class="barra"><h2>Movimentações</h2>
+        <select id="filtro-mov" aria-label="Filtrar por item"><option value="0">Todos os itens</option></select></div>
+      <div class="cartao tabela-rolavel">
+        <table id="tabela-movs">
+          <thead><tr><th>#</th><th>Quando</th><th>Tipo</th><th>Item</th><th class="num">Qtd.</th><th class="num">Saldo</th><th>Responsável</th><th>Motivo</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- pedidos -->
+    <section id="aba-pedidos" role="tabpanel" hidden>
+      <div class="barra"><h2>Pedidos de reposição</h2></div>
+      <div class="grade">
+        <form id="form-pedido-abrir" class="cartao">
+          <h3>Abrir pedido</h3>
+          <p class="suave pequeno">O pedido nasce no servidor. O cliente recebe só uma <strong>referência</strong> (o endereço do objeto).</p>
+          <label>Fornecedor <select id="pedido-fornecedor" required></select></label>
+          <button class="botao botao--primario">Abrir pedido</button>
+          <hr>
+          <h3>Usar uma referência existente</h3>
+          <p class="suave pequeno">Cole o endereço de um pedido aberto por outro cliente (Python, outra aba…).</p>
+          <label>Endereço (href) <input id="pedido-href" placeholder="http://localhost:8080/api/pedidos/PedidoReposicao-…"></label>
+          <button type="button" id="botao-pedido-href" class="botao">Conectar ao pedido</button>
+        </form>
+
+        <div id="cartao-pedido" class="cartao" hidden>
+          <h3 id="pedido-titulo">Pedido</h3>
+          <p class="suave pequeno">Referência: <code id="pedido-ref"></code></p>
+          <div class="tabela-rolavel"><table id="tabela-pedido"><thead><tr><th>Item</th><th class="num">Quantidade</th></tr></thead><tbody></tbody></table></div>
+          <form id="form-pedido-item" class="linha">
+            <select id="pedido-item" aria-label="Item"></select>
+            <input id="pedido-qtd" type="number" min="1" value="10" aria-label="Quantidade">
+            <button class="botao">Adicionar</button>
+          </form>
+          <div class="linha">
+            <button id="botao-pedido-atualizar" class="botao botao--leve">Atualizar</button>
+            <button id="botao-pedido-confirmar" class="botao botao--primario">Confirmar recebimento</button>
+            <button id="botao-pedido-cancelar" class="botao botao--perigo">Cancelar pedido</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- notificações -->
+    <section id="aba-notif" role="tabpanel" hidden>
+      <div class="barra"><h2>Grupo de notificações</h2>
+        <button id="botao-grupo" class="botao"></button></div>
+      <div class="grade">
+        <div class="cartao">
+          <h3>Enviar ao grupo</h3>
+          <form id="form-publicar">
+            <label>Tipo <select id="pub-tipo"><option>NOTIFICACAO</option><option>ALERTA</option><option>ATUALIZACAO</option></select></label>
+            <label>Mensagem <input id="pub-mensagem" required maxlength="900" placeholder="Ex.: Falta luva no centro cirúrgico"></label>
+            <button class="botao botao--primario">Publicar</button>
+          </form>
+          <hr>
+          <h3>Membros <button id="botao-membros" class="botao botao--leve botao--mini">atualizar</button></h3>
+          <ul id="lista-membros" class="lista-simples"></ul>
+        </div>
+        <div class="cartao">
+          <div class="barra barra--interna"><h3>Mensagens recebidas</h3><button id="botao-limpar-notif" class="botao botao--leve botao--mini">limpar</button></div>
+          <ol id="feed" class="feed" aria-live="polite"></ol>
+          <p id="feed-vazio" class="suave">Nenhuma mensagem ainda. Faça uma saída de estoque ou publique algo.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- demonstração -->
+    <section id="aba-demo" role="tabpanel" hidden>
+      <div class="barra"><h2>Passagem por valor × por referência</h2></div>
+      <div class="grade">
+        <div class="cartao">
+          <h3>Por valor</h3>
+          <p class="suave">Você recebe uma <strong>cópia</strong> do item em JSON. Alterar a cópia não muda o objeto do servidor.</p>
+          <label>Item <select id="demo-item"></select></label>
+          <button id="botao-demo-valor" class="botao botao--primario">Executar demo</button>
+        </div>
+        <div class="cartao">
+          <h3>Por referência</h3>
+          <p class="suave">O pedido <strong>fica no servidor</strong>. Dois proxies com a mesma referência atuam no mesmo objeto.</p>
+          <button id="botao-demo-ref" class="botao botao--primario">Executar demo</button>
+        </div>
+      </div>
+      <pre id="saida-demo" class="terminal" aria-live="polite">Escolha uma demonstração.</pre>
+    </section>
+
+    <!-- protocolo -->
+    <section id="aba-protocolo" role="tabpanel" hidden>
+      <div class="barra"><h2>Protocolo requisição-resposta</h2>
+        <label class="interruptor"><input type="checkbox" id="rastro-ligado" checked> registrar mensagens</label>
+        <label class="interruptor"><input type="checkbox" id="rastro-polling"> incluir long polling</label>
+        <button id="botao-limpar-rastro" class="botao botao--leve">Limpar</button></div>
+      <p class="suave pequeno">Cada chamada remota é uma requisição HTTP com corpo JSON (<code>&gt;&gt;&gt;</code>) e volta como uma resposta (<code>&lt;&lt;&lt;</code>) com o mesmo <code>X-Request-Id</code>.</p>
+      <pre id="rastro" class="terminal"></pre>
+    </section>
+  </main>
+</div>
+
+<!-- diálogos -->
+<dialog id="dialogo-mov">
+  <form method="dialog" id="form-mov" class="dialogo">
+    <h3 id="mov-titulo"></h3>
+    <label>Quantidade <input id="mov-qtd" type="number" min="1" required value="1"></label>
+    <label id="mov-motivo-rotulo">Motivo <input id="mov-motivo" placeholder="Obrigatório para medicamentos controlados"></label>
+    <div class="linha linha--fim"><button type="button" class="botao botao--leve" data-fechar>Cancelar</button><button class="botao botao--primario" value="ok">Confirmar</button></div>
+  </form>
+</dialog>
+
+<dialog id="dialogo-item">
+  <form method="dialog" id="form-item" class="dialogo dialogo--largo">
+    <h3>Novo item <span class="suave pequeno">(objeto criado aqui e enviado por valor)</span></h3>
+    <div class="grade2">
+      <label>Tipo <select id="item-tipo"><option value="MEDICAMENTO">Medicamento</option><option value="VACINA">Vacina</option><option value="INSUMO">Insumo</option></select></label>
+      <label>Nome <input id="item-nome" required></label>
+      <label>Fornecedor <select id="item-fornecedor" required></select></label>
+      <label>Quantidade inicial <input id="item-qtd" type="number" min="0" required value="10"></label>
+      <label>Estoque mínimo <input id="item-min" type="number" min="0" required value="2"></label>
+      <label>Preço unitário (R$) <input id="item-preco" type="number" min="0" step="0.01" required value="10.00"></label>
+      <label>Validade <input id="item-validade" type="date"></label>
+      <div class="campos-tipo" data-tipo="MEDICAMENTO">
+        <label>Princípio ativo <input id="item-principio"></label>
+        <label>Concentração <input id="item-concentracao"></label>
+        <label class="marcar"><input type="checkbox" id="item-controlado"> Controlado</label>
+      </div>
+      <div class="campos-tipo" data-tipo="VACINA" hidden>
+        <label>Doença-alvo <input id="item-doenca"></label>
+        <label>Doses por frasco <input id="item-doses" type="number" min="1" value="1"></label>
+      </div>
+      <div class="campos-tipo" data-tipo="INSUMO" hidden>
+        <label>Unidade de medida <input id="item-unidade" value="unidade"></label>
+        <label class="marcar"><input type="checkbox" id="item-esteril"> Estéril</label>
+      </div>
+    </div>
+    <p id="item-erro" class="erro" role="alert" hidden></p>
+    <div class="linha linha--fim"><button type="button" class="botao botao--leve" data-fechar>Cancelar</button><button class="botao botao--primario" value="ok">Cadastrar</button></div>
+  </form>
+</dialog>
+
+<dialog id="dialogo-json"><div class="dialogo dialogo--largo"><h3 id="json-titulo">Detalhes</h3><pre id="json-corpo" class="terminal"></pre>
+  <div class="linha linha--fim"><button class="botao" data-fechar>Fechar</button></div></div></dialog>
+
+<div id="toasts" class="toasts" aria-live="polite"></div>
+
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

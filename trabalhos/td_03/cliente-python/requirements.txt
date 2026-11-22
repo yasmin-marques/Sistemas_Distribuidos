@@ -1,0 +1,1 @@
+# O cliente usa apenas a biblioteca padrão do Python 3.9+. Nenhuma dependência para instalar.
