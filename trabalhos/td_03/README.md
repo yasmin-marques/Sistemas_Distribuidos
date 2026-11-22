@@ -23,7 +23,12 @@ abrir `index.html` direto no navegador).
 
 ```powershell
 # Windows (PowerShell)
-.\demo.ps1                                   # abre servidor, cliente Python e cliente web de uma vez
+
+# talvez seja necessário rodar antes dos comandos que vêm a seguir
+Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process 
+
+ # abre servidor, cliente Python e cliente web de uma vez
+.\demo.ps1                                  
 
 # ou separado:
 servidor-java\servidor.ps1                   # http://localhost:8080/api
