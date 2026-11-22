@@ -1,0 +1,28 @@
+# RabbitMQ (broker AMQP 0-9-1) com o painel de gerenciamento.
+#   docker compose up -d        sobe o broker
+#   docker compose down         para (os dados ficam no volume)
+#   docker compose down -v      para e apaga o volume (fila e mensagens)
+services:
+  rabbitmq:
+    image: rabbitmq:4.1-management
+    container_name: clinica-rabbitmq
+    # hostname fixo: o RabbitMQ guarda os dados em uma pasta com o nome do nó,
+    # então o mesmo hostname permite reaproveitar o volume ao recriar o contêiner
+    hostname: clinica-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-clinica}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-clinica123}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"   # AMQP (Consultas e Estoque)
+      - "15672:15672"                   # painel web de gerenciamento
+    volumes:
+      - rabbitmq-dados:/var/lib/rabbitmq   # fila durável e mensagens persistentes sobrevivem a reinícios
+    healthcheck:
+      # saudável só quando AMQP (5672) e painel (15672) já aceitam conexões
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q check_port_listener 5672 && rabbitmq-diagnostics -q check_port_listener 15672"]
+      interval: 5s
+      timeout: 10s
+      retries: 12
+
+volumes:
+  rabbitmq-dados:
